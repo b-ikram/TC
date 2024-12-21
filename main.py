@@ -1,27 +1,12 @@
-from fastapi import FastAPI 
-from pydantic import BaseModel
-app = FastAPI ()
-class User (BaseModel) :
-  id:int
-  name: str
-  email:str
-  password:str
-  friends: int 
+from fastapi import FastAPI
+from Employe import router as employe_router
 
-class Product (BaseModel):
-   id:int
-   description:str
-   price:int
-   quentity:int
-   provider:str 
+# Create the FastAPI app
+app = FastAPI()
 
-produits = []
+# Include the router from Employe
+app.include_router(employe_router, prefix="/employe", tags=["Employe"])
 
-@app.post ("/products")
-async def add_prod (produit:Product ):
-    produits.append (produit)
-    return {"new product:",produit.description}
-
-@app.get("/products")
-async def show_product ():
-   return produits
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Employee API"}
