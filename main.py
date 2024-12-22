@@ -1,12 +1,16 @@
 from fastapi import FastAPI
-from Employe import router as employe_router
+from endpoint.Admin import router as admin_router
+from endpoint.Employe import router as employee_router
+from endpoint.RH import router as rh_router
+from endpoint.token import router as token_router
 
-# Create the FastAPI app
+
 app = FastAPI()
 
-# Include the router from Employe
-app.include_router(employe_router, prefix="/employe", tags=["Employe"])
+# Inclure les routers dans l'application FastAPI
+app.include_router(admin_router, prefix="/admin", tags=["admin"])
+app.include_router(employee_router, prefix="/employee", tags=["employee"])
+app.include_router(rh_router, prefix="/RH", tags=["RH"])
+app.include_router(token_router, prefix="/token", tags=["token"])
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the Employee API"}
+

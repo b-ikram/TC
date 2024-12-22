@@ -1,28 +1,14 @@
-from fastapi import FastAPI ,APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from datetime import date, datetime, timedelta
-import random
-import string
-from database import SessionLocal 
-from models import EmployeeModel, Check_in_outModel
+from datetime import datetime, timedelta
+from database import SessionLocal
+from models import EmployeeModel, Check_in_outModel 
 from passlib.context import CryptContext
+from schema import Employee 
 
 router = APIRouter()
 
-
-class Employee(BaseModel):
-    nom: str
-    prenom: str
-    email:str
-    pwd:str
-    BirthDate: date
-    BirthPlace: str
-    joursConges: int
-    depId: str
-    RH: bool
-
-
+# Dépendance pour obtenir la session DB
 def get_db():
     db = SessionLocal()
     try:
@@ -30,25 +16,29 @@ def get_db():
     finally:
         db.close()
 
+# Hashage du mot de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+# Endpoint pour ajouter un employé
 @router.post("/add_user")
 async def add_user(emp: Employee, db: Session = Depends(get_db)):
-        
-    hashed_password = hash_password(emp.pwd)
+    hashed_password = hash_password(emp.Password)
 
     db_employee = EmployeeModel(
-        Nom=emp.nom,
-        Prenom=emp.prenom,
-        Date_naiss=emp.BirthDate,
-        Lieu_naiss=emp.BirthPlace,
+        Nom=emp.Nom,
+        Prenom=emp.Prenom,
+        Date_naiss=emp.Date_naiss,
+        Lieu_naiss=emp.Lieu_naiss,
         Password=hashed_password,
-        Email=emp.email,
-        Jour_Conge=emp.joursConges,
-        Departement_id=emp.depId,
+        Email=emp.Email,
+        Jour_Conge=emp.Jour_Conge,
+        Departement_id=emp.Departement_id,
         RH=emp.RH  
     )
 
@@ -56,12 +46,19 @@ async def add_user(emp: Employee, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_employee)
 
+    return {"message": "Employee added successfully", "employee_id": db_employee.id}
 
+# Endpoint pour récupérer tous les employés
 @router.get("/employees")
 async def get_employees(db: Session = Depends(get_db)):
     employees = db.query(EmployeeModel).all()
     return {"employees": employees}
 
+@router.get("/recogrize")
+async def recognize_face():
+    return {}
+
+# Endpoint pour récupérer un employé spécifique
 @router.get("/employee/{employee_id}")
 async def get_employee(employee_id: str, db: Session = Depends(get_db)):
     employee = db.query(EmployeeModel).filter(EmployeeModel.id == employee_id).first()
@@ -69,11 +66,12 @@ async def get_employee(employee_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Employee not found")
     return {"employee": employee}
 
+# Endpoint pour effectuer un check-in
 @router.post("/check_in/{employee_id}")
 async def check_in(employee_id: int, db: Session = Depends(get_db)):
     employee = db.query(EmployeeModel).filter(EmployeeModel.id == employee_id).first()
     if not employee:
-        raise HTTPException(status_code=404, detail="Employee non trouvé")
+        raise HTTPException(status_code=404, detail="Employee not found")
 
     now = datetime.now()
     check_in_record = Check_in_outModel(
@@ -88,13 +86,14 @@ async def check_in(employee_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(check_in_record)
 
-    return {"message": "Check-in enregistré avec succès!", "check_in_id": check_in_record.id}
+    return {"message": "Check-in registered successfully", "check_in_id": check_in_record.id}
 
+# Endpoint pour effectuer un check-out
 @router.post("/check_out/{employee_id}")
 async def check_out(employee_id: int, db: Session = Depends(get_db)):
     employee = db.query(EmployeeModel).filter(EmployeeModel.id == employee_id).first()
     if not employee:
-        raise HTTPException(status_code=404, detail="Employee non trouve")
+        raise HTTPException(status_code=404, detail="Employee not found")
 
     now = datetime.now()
     check_in_record = db.query(Check_in_outModel).filter(
@@ -110,6 +109,4 @@ async def check_out(employee_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(check_in_record)
 
-    return {"message": "Check-out enregistré avec succès!", "check_out_id": check_in_record.id}
-
- 
+    return {"message": "Check-out registered successfully", "check_out_id": check_in_record.id}

@@ -3,11 +3,19 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import INTERVAL
 Base = declarative_base()
 
+class AdminModel(Base):
+    __tablename__ = 'Admin'
+    id = Column(Integer, primary_key=True, index=True)
+    Email = Column(String, nullable=False)
+    Password = Column(String, nullable=False)
+    Nom = Column(String, nullable=False)
+    Prenom = Column(String, nullable=False)
+
 class EmployeeModel(Base):
     __tablename__ = 'Employe'
 
     id = Column(Integer, primary_key=True, index=True)
-    Email = Column(String, nullable=False)
+    Email = Column(String, nullable=False, unique=True)
     Password = Column(String, nullable=False)
     Nom = Column(String, nullable=False)
     Prenom = Column(String, nullable=False)
@@ -16,6 +24,7 @@ class EmployeeModel(Base):
     Date_naiss = Column(Date, nullable=False)
     Lieu_naiss = Column(String, nullable=False)
     RH = Column(Boolean, nullable=False) 
+    absence = Column(Integer, default=0)
     
     
 class TacheModel (Base):
@@ -26,16 +35,9 @@ class TacheModel (Base):
     etat_tache = Column(String, nullable=False)
     date_fin = Column(Date, nullable=False)
     date_debut = Column(Date, nullable=False)
-    deadline = Column(String, nullable=False)
+    deadline = Column(Date, nullable=False)
     Employe_id = Column(Integer, nullable=False) 
 
-class DepartementModel (Base):
-    __tablename__ = 'departement'   
-    id = Column(Integer, primary_key=True, index=True)
-    manager = Column(String, nullable=False)
-    absence = Column(String, nullable=False)
-    retard = Column(String, nullable=False)
-    presence = Column(Date, nullable=False)
    
 class CongeModel (Base):
     __tablename__ = 'conge'   
